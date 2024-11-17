@@ -52,6 +52,12 @@ class AdapTestDataset(Dataset):
         for sid in self.data:
             self._untested[sid] = set(self.data[sid].keys())
 
+    def get_score(self, student_idx, question_idx):
+        """
+        Get the score of a question for a student
+        """
+        return self.data[student_idx][question_idx]
+
     @property
     def tested(self):
         return self._tested
