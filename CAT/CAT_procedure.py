@@ -14,6 +14,8 @@ setuplogger()
 index = 0
 # {"task": "resident", "dataset": "resident_test", "concept_map": "resident_concept_map",
 #  "num_students": 1, "num_questions": 1836, "num_concepts": 8},
+# {"task": "resident", "dataset": "resident_train", "concept_map": "resident_concept_map",
+#  "num_students": 10, "num_questions": 1836, "num_concepts": 8},
 setting_info = [
     {"task": "resident", "dataset": "resident_eval", "concept_map": "resident_concept_map",
      "num_students": 9, "num_questions": 1836, "num_concepts": 8},
@@ -24,7 +26,7 @@ config = {
     'batch_size': 64,
     'num_epochs': 200,
     'device': 'cuda',
-    'num_dim': 1,  # for IRT or MIRT
+    'num_dim': 1,  # IRT if num_dim == 1 else MIRT
 }
 
 # fixed test length（选取题目的个数）
@@ -79,7 +81,8 @@ for strategy in strategies:
         selected_questions = strategy.adaptest_select(model, test_data)
         # selected_questions_list.append(selected_questions)
         for selected_question in selected_questions.items():
-            correct = test_data.get_score(selected_question[0], selected_question[1])  # 实际上需要运行本地LLM（需要GPU）或者消耗API，但是已有label（corrcet），所以直接获取
+            correct = test_data.get_score(selected_question[0],
+                                          selected_question[1])  # 实际上需要运行本地LLM（需要GPU）或者消耗API，但是已有label（corrcet），所以直接获取
             # logging.info(f'student {selected_question[0]} select question {selected_question[1]} with score {corrcet}')
             examinees_scores.append({
                 'student': selected_question[0],
@@ -102,19 +105,22 @@ student_ids = set(x['student'] for x in examinees_scores)
 student_scores_CAT = {}
 logging.info("CAT score:")
 for student_id in student_ids:
-    student_scores_CAT[student_id] = sum([x['score'] for x in examinees_scores if x['student'] == student_id]) / test_length
+    student_scores_CAT[student_id] = sum(
+        [x['score'] for x in examinees_scores if x['student'] == student_id]) / test_length
     logging.info("student_ids: " + str(student_id) + " score: " + str(student_scores_CAT[student_id]))
 
 # 计算总体准确率(使用test_triplets)
 student_scores_total = {}
 logging.info("Total score:")
 for student_id in student_ids:
-    student_scores_total[student_id] = sum([x[2] for x in test_triplets if x[0] == student_id]) / len([x[2] for x in test_triplets if x[0] == student_id])
+    student_scores_total[student_id] = sum([x[2] for x in test_triplets if x[0] == student_id]) / len(
+        [x[2] for x in test_triplets if x[0] == student_id])
     # print(len([x[2] for x in test_triplets if x[0] == student_id]))
     logging.info("student_ids: " + str(student_id) + " score: " + str(student_scores_total[student_id]))
 
 # 计算皮尔逊相关系数、Spearman相关系数、Kendall相关系数（student_scores_CAT和student_scores_total）
 from scipy.stats import pearsonr, spearmanr, kendalltau
+
 student_scores_CAT_list = [student_scores_CAT[x] for x in student_scores_CAT.keys()]
 student_scores_total_list = [student_scores_total[x] for x in student_scores_total.keys()]
 # print("student_scores_CAT_list: " + str(student_scores_CAT_list))

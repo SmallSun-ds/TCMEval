@@ -1,0 +1,6 @@
+可以在原有的数据基础上，加上mutle_agent的数据。
+比如原有10个LLM，再加上5个agent的数据。
+那么:
+num_train_student = 10 + 5 = 15
+num_test_student = 10
+需要注意，train和test的student（LLM）的编号需一致

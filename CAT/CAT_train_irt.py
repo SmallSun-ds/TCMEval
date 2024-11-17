@@ -16,7 +16,7 @@ config = {
     'learning_rate': 0.002,
     'batch_size': 256,
     'num_epochs': 200,
-    'num_dim': 1,  # for IRT or MIRT
+    'num_dim': 1,  # IRT if num_dim == 1 else MIRT
     'device': 'cuda',
 }
 
