@@ -13,6 +13,32 @@ from model.dataset.train_dataset import TrainDataset
 from model.dataset.dataset import Dataset
 
 
+# class IRT(nn.Module):
+#     def __init__(self, num_students, num_questions, num_dim):
+#         # num_dim: IRT if num_dim == 1 else MIRT
+#         super().__init__()
+#         self.num_dim = num_dim
+#         self.num_students = num_students
+#         self.num_questions = num_questions
+#         self.theta = nn.Embedding(self.num_students, self.num_dim)
+#         self.alpha = nn.Embedding(self.num_questions, self.num_dim)
+#         self.beta = nn.Embedding(self.num_questions, self.num_dim)
+#
+#         for name, param in self.named_parameters():
+#             if 'weight' in name:
+#                 nn.init.xavier_normal_(param)
+#
+#     def forward(self, student_ids, question_ids):
+#         theta = self.theta(student_ids)
+#         alpha = self.alpha(question_ids)
+#         beta = self.beta(question_ids)
+#         # for IRT-2PL
+#         pred = (alpha * (theta - beta)).sum(dim=1, keepdim=True)
+#         # for IRT-1PL
+#         # pred = theta - beta
+#         pred = torch.sigmoid(pred)
+#         return pred
+
 class IRT(nn.Module):
     def __init__(self, num_students, num_questions, num_dim):
         # num_dim: IRT if num_dim == 1 else MIRT
@@ -23,20 +49,25 @@ class IRT(nn.Module):
         self.theta = nn.Embedding(self.num_students, self.num_dim)
         self.alpha = nn.Embedding(self.num_questions, self.num_dim)
         self.beta = nn.Embedding(self.num_questions, self.num_dim)
+        self.gamma = nn.Embedding(self.num_questions, self.num_dim)  # 新增的猜测参数
 
         for name, param in self.named_parameters():
             if 'weight' in name:
                 nn.init.xavier_normal_(param)
 
     def forward(self, student_ids, question_ids):
-        theta = self.theta(student_ids)
-        alpha = self.alpha(question_ids)
-        beta = self.beta(question_ids)
-        # for IRT-2PL
+        theta = self.theta(student_ids)  # 获取学生的能力
+        alpha = self.alpha(question_ids)  # 获取题目的区分度
+        beta = self.beta(question_ids)  # 获取题目的难度
+        gamma = self.gamma(question_ids)  # 获取题目的猜测参数
+
+        # 计算预测值 (IRT-3PL)
         pred = (alpha * (theta - beta)).sum(dim=1, keepdim=True)
-        # for IRT-1PL
-        # pred = theta - beta
-        pred = torch.sigmoid(pred)
+        pred = torch.sigmoid(pred)  # 使用 Sigmoid 激活函数
+
+        # IRT-3PL模型：添加猜测参数
+        pred = gamma + (1 - gamma) * pred  # 添加猜测项
+
         return pred
 
 
