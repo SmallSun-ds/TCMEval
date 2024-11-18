@@ -54,6 +54,8 @@ class IRT(nn.Module):
         for name, param in self.named_parameters():
             if 'weight' in name:
                 nn.init.xavier_normal_(param)
+            if 'gamma' in name:  # 对gamma进行单独初始化
+                nn.init.constant_(param, 0.1)  # 例如，将猜测参数初始化为0.1
 
     def forward(self, student_ids, question_ids):
         theta = self.theta(student_ids)  # 获取学生的能力
