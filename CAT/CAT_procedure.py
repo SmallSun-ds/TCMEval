@@ -10,15 +10,20 @@ from model.dataset.adaptest_dataset import AdapTestDataset
 from model.IRT import IRTModel
 
 setuplogger()
+import wandb
+# 初始化 W&B
+wandb.init(
+    project="IRT",  # 项目名称
+    name="CAT_Procedure",  # 实验名称
+)
 
 index = 0
-# {"task": "resident", "dataset": "resident_test", "concept_map": "resident_concept_map",
+# {"task": "resident", "dataset": "resident_test",
 #  "num_students": 1, "num_questions": 1836, "num_concepts": 8},
-# {"task": "resident", "dataset": "resident_train", "concept_map": "resident_concept_map",
+# {"task": "resident", "dataset": "resident_train",
 #  "num_students": 10, "num_questions": 1836, "num_concepts": 8},
 setting_info = [
-    {"task": "resident", "dataset": "resident_eval", "concept_map": "resident_concept_map",
-     "num_students": 9, "num_questions": 1836, "num_concepts": 8},
+    {"task": "resident", "dataset": "resident_eval", "num_students": 9, "num_questions": 1836},
 ]
 
 config = {
@@ -26,7 +31,7 @@ config = {
     'batch_size': 64,
     'num_epochs': 200,
     'device': 'cuda',
-    'num_dim': 1,  # IRT if num_dim == 1 else MIRT
+    'num_dim': 8,  # IRT if num_dim == 1 else MIRT
 }
 
 # fixed test length（选取题目的个数）
@@ -34,20 +39,16 @@ test_length = 50
 
 task = setting_info[index]["task"]
 dataset = setting_info[index]["dataset"]
-concept_map = setting_info[index]["concept_map"]
 num_students = setting_info[index]["num_students"]
 num_questions = setting_info[index]["num_questions"]
-num_concepts = setting_info[index]["num_concepts"]
+
 
 # read datasets
 test_triplets = pd.read_csv(f'./data/{dataset}.csv', encoding='utf-8').to_records(index=False)
-concept_map = json.load(open(f'./concept_map/{concept_map}.json', 'r'))
-concept_map = {int(k): v for k, v in concept_map.items()}
 
-test_data = AdapTestDataset(test_triplets, concept_map,
+test_data = AdapTestDataset(test_triplets,
                             num_students,  # 同时为num_students个学生进行CAT测试
-                            num_questions,
-                            num_concepts)
+                            num_questions)
 
 # checkpoint path
 ckpt_path_question = f'./save/{task}_irt.pt'
@@ -132,4 +133,6 @@ logging.info("Pearson correlation coefficient: " + str(pearson_corr))
 logging.info("Spearman correlation coefficient: " + str(spearman_corr))
 logging.info("Kendall correlation coefficient: " + str(kendall_corr))
 
-# from vscode
+wandb.log({"Pearson correlation coefficient": pearson_corr})
+wandb.log({"Spearman correlation coefficient": spearman_corr})
+wandb.log({"Kendall correlation coefficient": kendall_corr})

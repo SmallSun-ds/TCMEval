@@ -13,18 +13,16 @@ except (ImportError, SystemError):  # pragma: no cover
 
 class AdapTestDataset(Dataset):
 
-    def __init__(self, data, concept_map,
-                 num_students, num_questions, num_concepts):
+    def __init__(self, data,
+                 num_students, num_questions):
         """
         Args:
             data: list, [(sid, qid, score)]
             concept_map: dict, concept map {qid: cid}
             num_students: int, total student number
             num_questions: int, total question number
-            num_concepts: int, total concept number
         """
-        super().__init__(data, concept_map,
-                         num_students, num_questions, num_concepts)
+        super().__init__(data, num_students, num_questions)
 
         # initialize tested and untested set
         self._tested = None
@@ -82,5 +80,4 @@ class AdapTestDataset(Dataset):
             else:
                 for qid in qids:
                     triplets.append((sid, qid, self.data[sid][qid]))
-        return TrainDataset(triplets, self.concept_map,
-                            self.num_students, self.num_questions, self.num_concepts)
+        return TrainDataset(triplets, self.num_students, self.num_questions)

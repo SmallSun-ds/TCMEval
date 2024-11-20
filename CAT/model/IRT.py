@@ -8,10 +8,10 @@ from sklearn.metrics import roc_auc_score, accuracy_score
 from scipy import integrate
 
 from .abstract_model import AbstractModel
-from model.dataset.adaptest_dataset import AdapTestDataset
-from model.dataset.train_dataset import TrainDataset
-from model.dataset.dataset import Dataset
-
+from CAT.model.dataset.adaptest_dataset import AdapTestDataset
+from CAT.model.dataset.train_dataset import TrainDataset
+from CAT.model.dataset.dataset import Dataset
+import wandb
 
 # class IRT(nn.Module):
 #     def __init__(self, num_students, num_questions, num_dim):
@@ -46,29 +46,28 @@ class IRT(nn.Module):
         self.num_dim = num_dim
         self.num_students = num_students
         self.num_questions = num_questions
-        self.theta = nn.Embedding(self.num_students, self.num_dim)
-        self.alpha = nn.Embedding(self.num_questions, self.num_dim)
-        self.beta = nn.Embedding(self.num_questions, self.num_dim)
-        self.gamma = nn.Embedding(self.num_questions, self.num_dim)  # 新增的猜测参数
+        self.theta = nn.Embedding(self.num_students, self.num_dim)  # (num_students, num_dim)
+        self.alpha = nn.Embedding(self.num_questions, self.num_dim)  # (num_questions, num_dim)
+        self.beta = nn.Embedding(self.num_questions, self.num_dim)  # (num_questions, num_dim)
+        self.gamma_raw = nn.Embedding(self.num_questions, 1)  # gamma 的维度固定为 1
 
         for name, param in self.named_parameters():
             if 'weight' in name:
                 nn.init.xavier_normal_(param)
-            if 'gamma' in name:  # 对gamma进行单独初始化
-                nn.init.constant_(param, 0.1)  # 例如，将猜测参数初始化为0.1
 
     def forward(self, student_ids, question_ids):
-        theta = self.theta(student_ids)  # 获取学生的能力
-        alpha = self.alpha(question_ids)  # 获取题目的区分度
-        beta = self.beta(question_ids)  # 获取题目的难度
-        gamma = self.gamma(question_ids)  # 获取题目的猜测参数
+        theta = self.theta(student_ids)  # (batch_size, num_dim)
+        alpha = self.alpha(question_ids)  # (batch_size, num_dim)
+        beta = self.beta(question_ids)  # (batch_size, num_dim)
+        gamma = torch.sigmoid(self.gamma_raw(question_ids)).squeeze(-1)  # (batch_size,)
 
         # 计算预测值 (IRT-3PL)
-        pred = (alpha * (theta - beta)).sum(dim=1, keepdim=True)
-        pred = torch.sigmoid(pred)  # 使用 Sigmoid 激活函数
+        pred = (alpha * (theta - beta)).sum(dim=1)  # 按维度求和, 输出 (batch_size,)
+        pred = torch.sigmoid(pred)  # (batch_size,)
 
         # IRT-3PL模型：添加猜测参数
-        pred = gamma + (1 - gamma) * pred  # 添加猜测项
+        pred = gamma + (1 - gamma) * pred  # (batch_size,)
+        pred = torch.sigmoid(pred)  # (batch_size,)
 
         return pred
 
@@ -86,8 +85,8 @@ class IRTModel(AbstractModel):
 
     def init_model(self, data: Dataset):
         self.model = IRT(data.num_students, data.num_questions, self.config['num_dim'])
-    
-    def train(self, train_data: TrainDataset, log_step=1):
+
+    def train(self, train_data: TrainDataset, log_step=1, wandb=None):
         lr = self.config['learning_rate']
         batch_size = self.config['batch_size']
         epochs = self.config['num_epochs']
@@ -100,7 +99,7 @@ class IRTModel(AbstractModel):
 
         for ep in range(1, epochs + 1):
             loss = 0.0
-            for cnt, (student_ids, question_ids, _, labels) in enumerate(train_loader):
+            for cnt, (student_ids, question_ids, labels) in enumerate(train_loader):
                 student_ids = student_ids.to(device)
                 question_ids = question_ids.to(device)
                 labels = labels.to(device).float()
@@ -112,13 +111,17 @@ class IRTModel(AbstractModel):
                 loss += bz_loss.data.float()
                 if cnt % log_step == 0:
                     logging.info('Epoch [{}] Batch [{}]: loss={:.5f}'.format(ep, cnt, loss / cnt))
+                    wandb.log({
+                        "epoch": ep,
+                        "loss": loss / cnt,
+                    })
 
     def adaptest_save_question(self, path):
         """
         Save the model. Only save the parameters of questions(alpha, beta)
         """
         model_dict = self.model.state_dict()
-        model_dict = {k:v for k,v in model_dict.items() if 'alpha' in k or 'beta' in k}
+        model_dict = {k: v for k, v in model_dict.items() if 'alpha' in k or 'beta' in k}
         torch.save(model_dict, path)
 
     def adaptest_save_student(self, path):
@@ -126,7 +129,7 @@ class IRTModel(AbstractModel):
         Save the model. Only save the parameters of students(theta)
         """
         model_dict = self.model.state_dict()
-        model_dict = {k:v for k,v in model_dict.items() if 'theta' in k}
+        model_dict = {k: v for k, v in model_dict.items() if 'theta' in k}
         torch.save(model_dict, path)
 
     def adaptest_save(self, path):
@@ -134,7 +137,7 @@ class IRTModel(AbstractModel):
         Save the model. Only save the parameters of questions(alpha, beta)
         """
         model_dict = self.model.state_dict()
-        model_dict = {k:v for k,v in model_dict.items() if 'alpha' in k or 'beta' in k}
+        model_dict = {k: v for k, v in model_dict.items() if 'alpha' in k or 'beta' in k}
         torch.save(model_dict, path)
 
     def adaptest_load(self, path):
@@ -162,7 +165,7 @@ class IRTModel(AbstractModel):
         for ep in range(1, epochs + 1):
             loss = 0.0
             log_steps = 1
-            for cnt, (student_ids, question_ids, _, labels) in enumerate(dataloader):
+            for cnt, (student_ids, question_ids, labels) in enumerate(dataloader):
                 student_ids = student_ids.to(device)
                 question_ids = question_ids.to(device)
                 labels = labels.to(device).float()
@@ -174,10 +177,9 @@ class IRTModel(AbstractModel):
                 loss += bz_loss.data.float()
                 # if cnt % log_steps == 0:
                 #     print('Epoch [{}] Batch [{}]: loss={:.3f}'.format(ep, cnt, loss / cnt))
-    
+
     def evaluate(self, adaptest_data: AdapTestDataset):
         data = adaptest_data.data
-        concept_map = adaptest_data.concept_map
         device = self.config['device']
 
         real = []
@@ -194,19 +196,6 @@ class IRTModel(AbstractModel):
                 pred += output.tolist()
             self.model.train()
 
-        # cov = number of covered concepts / number of all concepts
-        coverages = []
-        for sid in data:
-            all_concepts = set()
-            tested_concepts = set()
-            for qid in data[sid]:
-                all_concepts.update(set(concept_map[qid]))
-            for qid in adaptest_data.tested[sid]:
-                tested_concepts.update(set(concept_map[qid]))
-            coverage = len(tested_concepts) / len(all_concepts)
-            coverages.append(coverage)
-        cov = sum(coverages) / len(coverages)
-
         real = np.array(real)
         pred = np.array(pred)
         auc = roc_auc_score(real, pred)
@@ -220,7 +209,6 @@ class IRTModel(AbstractModel):
         return {
             'acc': acc,
             'auc': auc,
-            'cov': cov,
         }
 
     def get_pred(self, adaptest_data: AdapTestDataset):
@@ -229,7 +217,6 @@ class IRTModel(AbstractModel):
             predictions, dict[sid][qid]
         """
         data = adaptest_data.data
-        concept_map = adaptest_data.concept_map
         device = self.config['device']
 
         pred_all = {}
@@ -251,7 +238,14 @@ class IRTModel(AbstractModel):
 
     def _loss_function(self, pred, real):
         return -(real * torch.log(0.0001 + pred) + (1 - real) * torch.log(1.0001 - pred)).mean()
-    
+
+    # def _loss_function(self, pred, real):
+    #     pred = torch.clamp(pred, min=1e-7, max=1 - 1e-7)  # 限制 pred 在 (1e-7, 1-1e-7) 范围内
+    #     return -(real * torch.log(pred) + (1 - real) * torch.log(1 - pred)).mean()
+    #
+    # def _loss_function(self, pred, real):
+    #     return nn.BCEWithLogitsLoss()(pred, real)
+
     def get_alpha(self, question_id):
         """ get alpha of one question
         Args:
@@ -260,7 +254,7 @@ class IRTModel(AbstractModel):
             alpha of the given question, shape (num_dim, )
         """
         return self.model.alpha.weight.data.cpu().numpy()[question_id]
-    
+
     def get_beta(self, question_id):
         """ get beta of one question
         Args:
@@ -269,7 +263,7 @@ class IRTModel(AbstractModel):
             beta of the given question, shape (1, )
         """
         return self.model.beta.weight.data.cpu().numpy()[question_id]
-    
+
     def get_theta(self, student_id):
         """ get theta of one student
         Args:
@@ -294,10 +288,11 @@ class IRTModel(AbstractModel):
         dim = self.model.num_dim
         sid = torch.LongTensor([student_id]).to(device)
         qid = torch.LongTensor([question_id]).to(device)
-        theta = self.get_theta(sid) # (num_dim, )
-        alpha = self.get_alpha(qid) # (num_dim, )
-        beta = self.get_beta(qid)[0] # float value
+        theta = self.get_theta(sid)  # (num_dim, )
+        alpha = self.get_alpha(qid)  # (num_dim, )
+        beta = self.get_beta(qid)[0]  # float value
         pred_estimate = pred_all[student_id][question_id]
+
         def kli(x):
             """ The formula of KL information. Used for integral.
             Args:
@@ -310,10 +305,11 @@ class IRTModel(AbstractModel):
             # for IRT-1PL
             # pred = x - beta
             pred = 1 / (1 + np.exp(-pred))
-            q_estimate = 1  - pred_estimate
+            q_estimate = 1 - pred_estimate
             q = 1 - pred
             return pred_estimate * np.log(pred_estimate / pred) + \
-                    q_estimate * np.log((q_estimate / q))
+                q_estimate * np.log((q_estimate / q))
+
         c = 3
         boundaries = [[theta[i] - c / np.sqrt(n), theta[i] + c / np.sqrt(n)] for i in range(dim)]
         if len(boundaries) == 1:
@@ -339,11 +335,11 @@ class IRTModel(AbstractModel):
         pred = pred_all[student_id][question_id]
         q = 1 - pred
         # for IRT-2PL
-        fisher_info = (q*pred*(alpha * alpha.T)).numpy()
+        fisher_info = (q * pred * (alpha * alpha.T)).numpy()
         # for IRT-1PL
         # fisher_info = (q*pred).numpy()
         return fisher_info
-    
+
     def expected_model_change(self, sid: int, qid: int, adaptest_data: AdapTestDataset, pred_all: dict):
         """ get expected model change
         Args:
@@ -393,7 +389,4 @@ class IRTModel(AbstractModel):
 
         pred = pred_all[sid][qid]
         return pred * torch.norm(pos_weights - original_weights).item() + \
-               (1 - pred) * torch.norm(neg_weights - original_weights).item()
-        
-
-
+            (1 - pred) * torch.norm(neg_weights - original_weights).item()
