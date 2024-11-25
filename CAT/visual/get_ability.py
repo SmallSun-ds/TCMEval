@@ -54,21 +54,11 @@ for i in range(num_students):  # 全量测试
     student_ability = model.get_theta(i)
     students_ability[i] = student_ability
 
-# some trick
-students_ability = (students_ability + 1) ** 2
-
-# Radar chart setup
-labels = [
-    "Dimension 1", "Dimension 2", "Dimension 3", "Dimension 4",
-    "Dimension 5", "Dimension 6", "Dimension 7", "Dimension 8",
-    "Dimension 9", "Dimension 10", "Dimension 11", "Dimension 12",
-    "Dimension 13", "Dimension 14", "Dimension 15", "Dimension 16"
-]
-
 # Apply sigmoid transformation to all student abilities
 sigmoid_students_ability = sigmoid(students_ability)
-# # 平方
-# sigmoid_students_ability = sigmoid_students_ability ** 2
+# some trick
+students_ability = (students_ability + 2) ** 2
+print(students_ability)
 
 # Radar chart setup
 num_students = students_ability.shape[0]
@@ -77,6 +67,14 @@ angles += angles[:1]  # Complete the circle
 
 # Create the radar chart
 fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+
+# Radar chart setup
+# labels = [
+#     "Dimension 1", "Dimension 2", "Dimension 3", "Dimension 4",
+#     "Dimension 5", "Dimension 6", "Dimension 7", "Dimension 8",
+#     "Dimension 9", "Dimension 10", "Dimension 11", "Dimension 12",
+#     "Dimension 13", "Dimension 14", "Dimension 15", "Dimension 16"
+# ]
 
 # Plot each student's data
 for i in range(num_students):
@@ -88,7 +86,7 @@ for i in range(num_students):
 ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
 ax.set_yticklabels(["0.2", "0.4", "0.6", "0.8", "1.0"])
 ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels, fontsize=8)
+# ax.set_xticklabels(labels, fontsize=8)
 ax.set_title("Students Ability (Sigmoid Transformed)", va='bottom')
 
 # Add legend (multi-column)

@@ -8,15 +8,13 @@ from strategy.KLI_strategy import KLIStrategy
 from model.dataset.adaptest_dataset import AdapTestDataset
 from model.IRT import IRTModel
 from multiprocessing import Pool
-from CAT.utils.settings import setting_info
+from CAT.utils.settings import test_setting_info as setting_info
+from CAT.utils.settings import test_length
 
 setuplogger()
 
 
 def run_test(index):
-    # fixed test length（选取题目的个数）
-    test_length = 50
-
     task = setting_info[index]["task"]
     dataset = setting_info[index]["dataset"]
     num_students = setting_info[index]["num_students"]

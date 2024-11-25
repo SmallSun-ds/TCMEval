@@ -1,7 +1,8 @@
 import json
 from CAT.utils.logger import setuplogger
 import pandas as pd
-from CAT.utils.settings import setting_info
+from CAT.utils.settings import test_setting_info as setting_info
+from CAT.utils.settings import test_length
 
 setuplogger()
 
@@ -16,7 +17,6 @@ def run_get_correlation(index):
     with open(f'../result/{task}_dim{num_dim}_{pl}pl.json', 'r') as f:
         examinees_scores = json.load(f)
     test_triplets = pd.read_csv(f'../data/{dataset}.csv', encoding='utf-8').to_records(index=False)
-    test_length = 50
     student_ids = set(x['student'] for x in examinees_scores)
     # 计算每个学生的准确率
     student_scores_CAT = {}

@@ -5,7 +5,7 @@ from model.IRT import IRTModel
 from CAT.model.dataset.train_dataset import TrainDataset
 from multiprocessing import Pool
 import wandb
-from CAT.utils.settings import setting_info
+from CAT.utils.settings import train_setting_info as setting_info
 
 setuplogger()
 
