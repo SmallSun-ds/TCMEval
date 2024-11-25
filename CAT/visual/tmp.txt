@@ -1,0 +1,92 @@
+E:\MiniConda\envs\d2l\python.exe E:\PostGraduate\Code\ECNU\TCMEval\CAT\visual\get_correlation.py
+
+num_dim: 8 pl: 3
+Pearson correlation coefficient: 0.7513600272295352
+Spearman correlation coefficient: 0.314964916380737
+Kendall correlation coefficient: 0.2357022603955158
+
+num_dim: 8 pl: 2
+Pearson correlation coefficient: 0.6612937860142033
+Spearman correlation coefficient: 0.7166666666666667
+Kendall correlation coefficient: 0.5555555555555556
+
+num_dim: 8 pl: 1
+Pearson correlation coefficient: 0.8556439874988653
+Spearman correlation coefficient: 0.9539832459815243
+Kendall correlation coefficient: 0.8733260632194672
+
+num_dim: 4 pl: 3
+Pearson correlation coefficient: 0.8684973383711332
+Spearman correlation coefficient: 0.705907277725455
+Kendall correlation coefficient: 0.6288281455225324
+
+num_dim: 4 pl: 2
+Pearson correlation coefficient: 0.8571503365367834
+Spearman correlation coefficient: 0.7607034407511525
+Kendall correlation coefficient: 0.6499336836196815
+
+num_dim: 4 pl: 1
+Pearson correlation coefficient: 0.8556439874988653
+Spearman correlation coefficient: 0.9539832459815243
+Kendall correlation coefficient: 0.8733260632194672
+
+num_dim: 2 pl: 3
+Pearson correlation coefficient: 0.8002332141859008
+Spearman correlation coefficient: 0.6722926454528144
+Kendall correlation coefficient: 0.5144957554275265
+
+num_dim: 2 pl: 2
+Pearson correlation coefficient: 0.9000007492204986
+Spearman correlation coefficient: 0.8870370532810664
+Kendall correlation coefficient: 0.7606388292556648
+
+num_dim: 2 pl: 1
+Pearson correlation coefficient: 0.8556439874988653
+Spearman correlation coefficient: 0.9539832459815243
+Kendall correlation coefficient: 0.8733260632194672
+
+num_dim: 1 pl: 3
+Pearson correlation coefficient: 0.840151478737683
+Spearman correlation coefficient: 0.5690426379538917
+Kendall correlation coefficient: 0.4789207443461594
+
+num_dim: 1 pl: 2
+Pearson correlation coefficient: 0.9812154757025883
+Spearman correlation coefficient: 0.9372466978064098
+Kendall correlation coefficient: 0.8733260632194672
+
+num_dim: 1 pl: 1
+Pearson correlation coefficient: 0.8667097740140002
+Spearman correlation coefficient: 0.6210590034081187
+Kendall correlation coefficient: 0.4868644955601476
+
+num_dim: 16 pl: 3
+Pearson correlation coefficient: 0.9401561613853067
+Spearman correlation coefficient: 0.8786687791935092
+Kendall correlation coefficient: 0.7042952122737639
+
+num_dim: 16 pl: 2
+Pearson correlation coefficient: 0.8134298442937806
+Spearman correlation coefficient: 0.9790880682441959
+Kendall correlation coefficient: 0.9296696802013682
+
+num_dim: 16 pl: 1
+Pearson correlation coefficient: 0.8556439874988653
+Spearman correlation coefficient: 0.9539832459815243
+Kendall correlation coefficient: 0.8733260632194672
+
+num_dim: 32 pl: 3
+Pearson correlation coefficient: 0.8697929597429306
+Spearman correlation coefficient: 0.7615129419677079
+Kendall correlation coefficient: 0.6479515952918627
+
+num_dim: 32 pl: 2
+Pearson correlation coefficient: 0.723549206311956
+Spearman correlation coefficient: 0.2941280323856063
+Kendall correlation coefficient: 0.17149858514250882
+
+num_dim: 32 pl: 1
+Pearson correlation coefficient: 0.8556439874988653
+Spearman correlation coefficient: 0.9539832459815243
+Kendall correlation coefficient: 0.8733260632194672
+

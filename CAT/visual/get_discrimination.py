@@ -41,8 +41,8 @@ model = IRTModel(**config)
 model.init_model(test_data, pl=pl, num_dim=num_dim)
 
 question_id = 1
-question_difficulty = model.get_beta(question_id)
+question_discrimination = model.get_alpha(question_id)
 
-print(f'question {question_id} difficulty: {question_difficulty}')
-print("type of question_difficulty: ", type(question_difficulty))
-print("shape of question_difficulty: ", question_difficulty.shape)
+print(f'question {question_id} discrimination: {question_discrimination}')
+print("type of question_discrimination: ", type(question_discrimination))
+print("shape of question_discrimination: ", question_discrimination.shape)

@@ -1,0 +1,23 @@
+# {"task": "resident", "dataset": "resident_test",
+#  "num_students": 1, "num_questions": 1836, "num_concepts": 8},
+
+setting_info = [
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 8},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 8},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 8},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 4},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 4},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 4},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 2},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 2},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 2},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 1},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 1},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 1},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 16},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 16},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 16},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 3, 'num_dim': 32},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 2, 'num_dim': 32},
+    {"task": "resident", "dataset": "resident_train", "num_students": 10, "num_questions": 1836, 'pl': 1, 'num_dim': 32},
+]

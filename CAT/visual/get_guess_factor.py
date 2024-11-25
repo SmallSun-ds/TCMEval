@@ -40,9 +40,25 @@ ckpt_path_question = f'./save/{task}_irt_dim{num_dim}_{pl}pl.pt'
 model = IRTModel(**config)
 model.init_model(test_data, pl=pl, num_dim=num_dim)
 
-question_id = 1
-question_difficulty = model.get_beta(question_id)
+# question_id = 1000
+# question_guess_factor = model.get_gamma(question_id)
+#
+# print(f'question {question_id} guess_factor: {question_guess_factor}')
+# print("type of question_guess_factor: ", type(question_guess_factor))
+# print("shape of question_guess_factor: ", question_guess_factor.shape)
 
-print(f'question {question_id} difficulty: {question_difficulty}')
-print("type of question_difficulty: ", type(question_difficulty))
-print("shape of question_difficulty: ", question_difficulty.shape)
+guess_factor_list = []
+for i in range(num_questions):
+    question_guess_factor = model.get_gamma(i)
+    guess_factor_list.append(question_guess_factor)
+
+# 分析guess_factor的分布
+guess_factor_list = np.array(guess_factor_list)
+print("shape of guess_factor_list: ", guess_factor_list.shape)
+
+plt.figure()
+plt.hist(guess_factor_list, bins=100, alpha=0.75)
+plt.xlabel('guess_factor')
+plt.ylabel('count')
+plt.title('guess_factor distribution')
+plt.show()

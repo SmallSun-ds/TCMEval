@@ -11,35 +11,54 @@ from .abstract_model import AbstractModel
 from CAT.model.dataset.adaptest_dataset import AdapTestDataset
 from CAT.model.dataset.train_dataset import TrainDataset
 from CAT.model.dataset.dataset import Dataset
-import wandb
 
-# class IRT(nn.Module):
-#     def __init__(self, num_students, num_questions, num_dim):
-#         # num_dim: IRT if num_dim == 1 else MIRT
-#         super().__init__()
-#         self.num_dim = num_dim
-#         self.num_students = num_students
-#         self.num_questions = num_questions
-#         self.theta = nn.Embedding(self.num_students, self.num_dim)
-#         self.alpha = nn.Embedding(self.num_questions, self.num_dim)
-#         self.beta = nn.Embedding(self.num_questions, self.num_dim)
-#
-#         for name, param in self.named_parameters():
-#             if 'weight' in name:
-#                 nn.init.xavier_normal_(param)
-#
-#     def forward(self, student_ids, question_ids):
-#         theta = self.theta(student_ids)
-#         alpha = self.alpha(question_ids)
-#         beta = self.beta(question_ids)
-#         # for IRT-2PL
-#         pred = (alpha * (theta - beta)).sum(dim=1, keepdim=True)
-#         # for IRT-1PL
-#         # pred = theta - beta
-#         pred = torch.sigmoid(pred)
-#         return pred
+class IRT_1PL(nn.Module):
+    def __init__(self, num_students, num_questions, num_dim):
+        # num_dim: IRT if num_dim == 1 else MIRT
+        super().__init__()
+        self.num_dim = num_dim
+        self.num_students = num_students
+        self.num_questions = num_questions
+        self.theta = nn.Embedding(self.num_students, self.num_dim)
+        self.beta = nn.Embedding(self.num_questions, self.num_dim)
 
-class IRT(nn.Module):
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                nn.init.xavier_normal_(param)
+
+    def forward(self, student_ids, question_ids):
+        theta = self.theta(student_ids)
+        beta = self.beta(question_ids)
+        # for IRT-1PL
+        pred = (theta - beta).sum(dim=1, keepdim=True)
+        pred = torch.sigmoid(pred)
+        return pred
+
+class IRT_2PL(nn.Module):
+    def __init__(self, num_students, num_questions, num_dim):
+        # num_dim: IRT if num_dim == 1 else MIRT
+        super().__init__()
+        self.num_dim = num_dim
+        self.num_students = num_students
+        self.num_questions = num_questions
+        self.theta = nn.Embedding(self.num_students, self.num_dim)
+        self.alpha = nn.Embedding(self.num_questions, self.num_dim)
+        self.beta = nn.Embedding(self.num_questions, self.num_dim)
+
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                nn.init.xavier_normal_(param)
+
+    def forward(self, student_ids, question_ids):
+        theta = self.theta(student_ids)
+        alpha = self.alpha(question_ids)
+        beta = self.beta(question_ids)
+        # for IRT-2PL
+        pred = (alpha * (theta - beta)).sum(dim=1, keepdim=True)
+        pred = torch.sigmoid(pred)
+        return pred
+
+class IRT_3PL(nn.Module):
     def __init__(self, num_students, num_questions, num_dim):
         # num_dim: IRT if num_dim == 1 else MIRT
         super().__init__()
@@ -67,8 +86,6 @@ class IRT(nn.Module):
 
         # IRT-3PL模型：添加猜测参数
         pred = gamma + (1 - gamma) * pred  # (batch_size,)
-        pred = torch.sigmoid(pred)  # (batch_size,)
-
         return pred
 
 
@@ -83,8 +100,13 @@ class IRTModel(AbstractModel):
     def name(self):
         return 'Item Response Theory'
 
-    def init_model(self, data: Dataset):
-        self.model = IRT(data.num_students, data.num_questions, self.config['num_dim'])
+    def init_model(self, data: Dataset, pl=3, num_dim=8):
+        if pl == 1:
+            self.model = IRT_1PL(data.num_students, data.num_questions, num_dim)
+        elif pl == 2:
+            self.model = IRT_2PL(data.num_students, data.num_questions, num_dim)
+        elif pl == 3:
+            self.model = IRT_3PL(data.num_students, data.num_questions, num_dim)
 
     def train(self, train_data: TrainDataset, log_step=1, wandb=None):
         lr = self.config['learning_rate']
@@ -111,10 +133,11 @@ class IRTModel(AbstractModel):
                 loss += bz_loss.data.float()
                 if cnt % log_step == 0:
                     logging.info('Epoch [{}] Batch [{}]: loss={:.5f}'.format(ep, cnt, loss / cnt))
-                    wandb.log({
-                        "epoch": ep,
-                        "loss": loss / cnt,
-                    })
+                    if wandb is not None:
+                        wandb.log({
+                            "epoch": ep,
+                            "loss": loss / cnt,
+                        })
 
     def adaptest_save_question(self, path):
         """
@@ -144,6 +167,7 @@ class IRTModel(AbstractModel):
         """
         Reload the saved model
         """
+        print("load model from", path)
         self.model.load_state_dict(torch.load(path), strict=False)
         self.model.to(self.config['device'])
 
@@ -237,6 +261,8 @@ class IRTModel(AbstractModel):
         return pred_all
 
     def _loss_function(self, pred, real):
+        # print("pred.shape: ", pred.shape)
+        # print("real.shape: ", real.shape)
         return -(real * torch.log(0.0001 + pred) + (1 - real) * torch.log(1.0001 - pred)).mean()
 
     # def _loss_function(self, pred, real):
@@ -272,6 +298,16 @@ class IRTModel(AbstractModel):
             theta of the given student, shape (num_dim, )
         """
         return self.model.theta.weight.data.cpu().numpy()[student_id]
+
+    def get_gamma(self, question_id):
+        """ get gamma of one question
+        Args:
+            question_id: int, question id
+        Returns:
+            gamma of the given question, shape (1, )
+        """
+
+        return torch.sigmoid(self.model.gamma_raw.weight.data[question_id]).cpu().numpy()
 
     def get_kli(self, student_id, question_id, n, pred_all):
         """ get KL information
@@ -331,14 +367,21 @@ class IRTModel(AbstractModel):
         """
         device = self.config['device']
         qid = torch.LongTensor([question_id]).to(device)
-        alpha = self.model.alpha(qid).clone().detach().cpu()
         pred = pred_all[student_id][question_id]
         q = 1 - pred
-        # for IRT-2PL
-        fisher_info = (q * pred * (alpha * alpha.T)).numpy()
-        # for IRT-1PL
-        # fisher_info = (q*pred).numpy()
+        if isinstance(self.model, IRT_2PL):  # 2PL
+            alpha = self.model.alpha(qid).clone().detach().cpu()
+            fisher_info = (q * pred * (alpha * alpha.T)).numpy()
+        elif isinstance(self.model, IRT_1PL):  # 1PL
+            fisher_info = (q * pred)
+        else:  # 3PL
+            alpha = self.model.alpha(qid).clone().detach().cpu()
+            gamma = torch.sigmoid(self.model.gamma_raw(qid)).squeeze(-1).clone().detach().cpu()
+            # I(\theta) = \frac{\alpha^2 \cdot (p(\theta) - \gamma)^2 \cdot (1 - p(\theta))}{(1 - \gamma)^2 \cdot p(\theta)}
+            fisher_info = (alpha * alpha.T * (pred - gamma) * (pred - gamma) * q / (1 - gamma) / (1 - gamma) / pred).numpy()
+        # print("fisher_info.shape", fisher_info.shape)
         return fisher_info
+
 
     def expected_model_change(self, sid: int, qid: int, adaptest_data: AdapTestDataset, pred_all: dict):
         """ get expected model change

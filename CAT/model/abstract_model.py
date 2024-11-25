@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from model.dataset.adaptest_dataset import AdapTestDataset
-from model.dataset.train_dataset import TrainDataset
-from model.dataset.dataset import Dataset
+from CAT.model.dataset.adaptest_dataset import AdapTestDataset
+from CAT.model.dataset.train_dataset import TrainDataset
+from CAT.model.dataset.dataset import Dataset
 
 
 class AbstractModel(ABC):
